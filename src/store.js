@@ -1016,7 +1016,7 @@ export const availableLanguages = [
     { code: 'no', name: 'Norsk', flag: '🇳🇴' },
     { code: 'da', name: 'Dansk', flag: '🇩🇰' },
     { code: 'fi', name: 'Suomi', flag: '🇫🇮' },
-  
+
 ];
 
 export function t(key) {

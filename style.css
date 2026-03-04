@@ -32,12 +32,12 @@
   --font-family-headings: 'Renos-Rough', 'Inter', system-ui, sans-serif;
   --font-family-body: 'Noto Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
 
-  --font-size-base: 18px;
-  --font-size-sm: 16px;
-  --font-size-md: 20px;
-  --font-size-lg: 24px;
-  --font-size-xl: 32px;
-  --font-size-xxl: 48px;
+  --font-size-base: 22px;
+  --font-size-sm: 19px;
+  --font-size-md: 26px;
+  --font-size-lg: 32px;
+  --font-size-xl: 42px;
+  --font-size-xxl: 56px;
 
   /* Spacing */
   --spacing-xs: 8px;
@@ -65,8 +65,14 @@
   padding: 0;
 }
 
+html {
+  font-size: 21px;
+  /* Kiosk base scale – all rem values derive from this */
+}
+
 body {
   font-family: var(--font-family-body);
+  font-size: var(--font-size-base);
   background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.5;
@@ -206,7 +212,7 @@ img {
   color: white;
   text-align: center;
   font-family: var(--font-family-headings);
-  font-size: 1rem;
+  font-size: 1.3rem;
   background-color: rgba(255, 255, 255, 0.05);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -221,7 +227,7 @@ img {
 }
 
 .category-icon {
-  font-size: 2rem;
+  font-size: 2.8rem;
   margin-bottom: 2px;
 }
 

@@ -212,9 +212,9 @@ function renderAttractScreen() {
     }
     .attract-start-btn {
       font-family: var(--font-family-headings);
-      font-size: clamp(1rem, 2.5vmin, 1.3rem);
+      font-size: clamp(1.4rem, 3.5vmin, 2rem);
       font-weight: 400;
-      padding: clamp(12px, 2vmin, 18px) clamp(32px, 6vmin, 56px);
+      padding: clamp(18px, 3vmin, 28px) clamp(48px, 8vmin, 80px);
       background-color: var(--color-accent);
       color: white;
       border: none;
@@ -467,7 +467,7 @@ function renderMenuScreen() {
     card.style.cssText = `display: flex; flex-direction: column; height: 100%; transition: transform 0.2s;`;
 
     card.innerHTML = `
-            <div style="height: 200px; overflow: hidden; border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-sm); background: #f0f0f0;">
+            <div style="height: 220px; overflow: hidden; border-radius: var(--border-radius-sm); margin-bottom: var(--spacing-sm); background: #f0f0f0;">
                 ${imageUrl ? `<img src="${imageUrl}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">` : ''}
             </div>
             <h3 style="margin-bottom: var(--spacing-xs);">${product.name}</h3>
