@@ -9,10 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$host = '127.0.0.1';
-$db   = 'restaurant_db';
-$user = 'root';
-$pass = '';
+$host = 'localhost';
+$db   = 'u240457_HamHalek';
+$user = 'u240457_HamHalek';
+$pass = 'FX5DNgczDjjcjvw7NxAF';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [

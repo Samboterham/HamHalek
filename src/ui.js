@@ -1,5 +1,6 @@
 import { state, setView, setCategory, addToCart, removeFromCart, updateQuantity, getCartTotal, getCartCount, clearCart, startOrdering, processTip, completePayment, setPaymentMethod, subscribe, setLanguage, t, resetSession, availableLanguages } from './store.js';
 import { submitOrder } from './data.js';
+import { printReceipt } from './printer.js';
 
 const app = document.querySelector('#app');
 
@@ -20,16 +21,22 @@ export function renderApp() {
   const root = document.querySelector('#app');
   if (!root) return;
 
-  // 1. Save scroll positions before clearing
-  const sidebarEl = root.querySelector('aside');
-  const mainEl = root.querySelector('main');
+  // 1. Get references or create container
+  let container = root.querySelector('.container');
+  const sidebarEl = container ? container.querySelector('aside') : null;
+  const mainEl = container ? container.querySelector('main') : null;
+
+  // Save scroll positions
   const savedSidebarScroll = sidebarEl ? sidebarEl.scrollTop : 0;
   const savedMainScroll = mainEl ? mainEl.scrollTop : 0;
 
-  root.innerHTML = '';
-
-  const container = document.createElement('div');
-  container.className = 'container';
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'container';
+    root.appendChild(container);
+  } else {
+    container.innerHTML = '';
+  }
 
   if (state.loading) {
     container.innerHTML = `
@@ -57,7 +64,7 @@ export function renderApp() {
       container.innerText = 'View not found';
   }
 
-  root.appendChild(container);
+  // No need to append container to root, it's already there
 
   // 2. Restore scroll positions after rendering
   if (state.view === 'menu') {
@@ -142,13 +149,13 @@ function renderAttractScreen() {
   content.innerHTML = `
     <!-- Language Selection -->
     <div class="lang-selector" style="position: absolute; top: clamp(16px, 3vmin, 32px); right: clamp(16px, 3vmin, 32px); display: flex; gap: 15px; z-index: 10;">
-      <button class="lang-btn ${state.language === 'en' ? 'active' : ''}" data-lang="en" style="background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px; transition: all 0.2s;">
+      <button class="lang-btn ${state.language === 'en' ? 'active' : ''}" data-lang="en" style="background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px; transition: all 0.2s; color: white;">
         <span style="font-size: 2rem;">🇬🇧</span>
       </button>
-      <button class="lang-btn ${state.language === 'nl' ? 'active' : ''}" data-lang="nl" style="background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px; transition: all 0.2s;">
+      <button class="lang-btn ${state.language === 'nl' ? 'active' : ''}" data-lang="nl" style="background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px; transition: all 0.2s; color: white;">
         <span style="font-size: 2rem;">🇳🇱</span>
       </button>
-      <button class="lang-btn ${state.language === 'zh' ? 'active' : ''}" data-lang="zh" style="background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px; transition: all 0.2s;">
+      <button class="lang-btn ${state.language === 'zh' ? 'active' : ''}" data-lang="zh" style="background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px; transition: all 0.2s; color: white;">
         <span style="font-size: 2rem;">🇨🇳</span>
       </button>
       <button id="more-lang-btn" style="background: rgba(255,255,255,0.1); border: none; cursor: pointer; padding: 5px 12px; border-radius: 50px; color: white; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
@@ -158,8 +165,8 @@ function renderAttractScreen() {
     </div>
 
     <!-- Logo -->
-    <div style="padding-top: clamp(16px, 3vmin, 32px);">
-      <img src="/images/logo.png" alt="Ham Halek" style="height: clamp(240px, 50vmin, 500px); filter: drop-shadow(2px 2px 10px rgba(0,0,0,0.5));">
+    <div style="padding-top: clamp(60px, 12vmin, 160px);">
+      <img src="images/happy_herbivore.png" alt="Ham Halek" style="height: clamp(240px, 50vmin, 500px); filter: drop-shadow(2px 2px 10px rgba(0,0,0,0.5));">
     </div>
 
     <!-- Product info (fades with image) -->
@@ -251,8 +258,7 @@ function renderAttractScreen() {
   function showSlide(index) {
     if (featured.length === 0) return;
 
-    const product = featured[index % featured.length];
-    const imageUrl = `/images/${product.image_filename}`;
+    const imageUrl = `images/${product.image_filename}`;
 
     const nameEl = div.querySelector('#attract-product-name');
     const descEl = div.querySelector('#attract-product-desc');
@@ -288,7 +294,7 @@ function renderAttractScreen() {
   // Show first slide immediately
   if (featured.length > 0) {
     const first = featured[0];
-    bgA.style.backgroundImage = `url('/images/${first.image_filename}')`;
+    bgA.style.backgroundImage = `url('images/${first.image_filename}')`;
     bgA.classList.add('attract-bg-active');
 
     const nameEl = content.querySelector('#attract-product-name');
@@ -429,7 +435,7 @@ function renderMenuScreen() {
 
   const logo = document.createElement('div');
   logo.className = 'sidebar-logo';
-  logo.innerHTML = '<img src="/images/logo1.png" alt="Ham Halek">';
+  logo.innerHTML = '<img src="images/logo1.png" alt="Ham Halek">';
   logo.addEventListener('click', () => resetSession());
   sidebar.appendChild(logo);
 
@@ -459,7 +465,7 @@ function renderMenuScreen() {
   const filtered = state.products.filter(p => p.category_id === state.category);
 
   filtered.forEach(product => {
-    const imageUrl = product.image_filename ? `/images/${product.image_filename}` : '';
+    const imageUrl = product.image_filename ? `images/${product.image_filename}` : '';
     const price = parseFloat(product.price);
 
     const card = document.createElement('div');
@@ -539,6 +545,9 @@ function renderCartModal() {
   panel.className = 'cart-panel';
 
   function updateContent() {
+    const itemsEl = panel.querySelector('.cart-items');
+    const savedScroll = itemsEl ? itemsEl.scrollTop : 0;
+
     panel.innerHTML = '';
 
     const header = document.createElement('div');
@@ -550,7 +559,7 @@ function renderCartModal() {
     itemsContainer.className = 'cart-items';
 
     state.cart.forEach(item => {
-      const imageUrl = item.product.image_filename ? `/images/${item.product.image_filename}` : '';
+      const imageUrl = item.product.image_filename ? `images/${item.product.image_filename}` : '';
       const price = parseFloat(item.product.price);
 
       const itemEl = document.createElement('div');
@@ -577,6 +586,7 @@ function renderCartModal() {
     }
 
     panel.appendChild(itemsContainer);
+    itemsContainer.scrollTop = savedScroll;
 
     const footer = document.createElement('div');
     footer.style.cssText = 'border-top: 2px solid #eee; padding-top: var(--spacing-md); margin-top: var(--spacing-md);';
@@ -684,6 +694,10 @@ function renderSuccessScreen() {
 
   const msg = state.paymentMethod === 'counter' ? t('proceed_counter') : t('please_receipt');
   const itemsTotal = getCartTotal().toFixed(2);
+  const tipAmount = state.tip || 0;
+
+  // Auto-print receipt on arrival
+  printReceipt(state.cart, state.orderNumber, state.orderType, tipAmount, parseFloat(itemsTotal));
 
   div.innerHTML = `
         <div class="success-card animate-up">
@@ -704,10 +718,19 @@ function renderSuccessScreen() {
             </div>
         </div>
 
-        <button id="new-order-btn" class="btn btn-primary animate-up" style="animation-delay: 0.2s; padding: 24px 80px; font-size: 1.5rem; box-shadow: 0 10px 20px rgba(255,117,32,0.2);">
-            ${t('finish')}
-        </button>
+        <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 500px; margin-top: var(--spacing-md);">
+            <button id="new-order-btn" class="btn btn-primary animate-up" style="animation-delay: 0.2s; padding: 24px; font-size: 1.5rem; box-shadow: 0 10px 20px rgba(255,117,32,0.2);">
+                ${t('finish')}
+            </button>
+            <button id="reprint-btn" class="btn btn-secondary animate-up" style="animation-delay: 0.3s; padding: 15px; font-size: 1rem; opacity: 0.8;">
+                🖨️ ${t('print_receipt') || 'Print Receipt'}
+            </button>
+        </div>
     `;
+
+  div.querySelector('#reprint-btn').addEventListener('click', () => {
+    printReceipt(state.cart, state.orderNumber, state.orderType, tipAmount, parseFloat(itemsTotal));
+  });
 
   div.querySelector('#new-order-btn').addEventListener('click', () => {
     resetSession();
@@ -731,7 +754,7 @@ function renderUpsellModal() {
   }
 
   const product = available[Math.floor(Math.random() * available.length)];
-  const imageUrl = product.image_filename ? `/images/${product.image_filename}` : '';
+  const imageUrl = product.image_filename ? `images/${product.image_filename}` : '';
 
   const content = document.createElement('div');
   content.className = 'modal-content';

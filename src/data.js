@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = 'api';
 
 // ── Hardcoded demo data (used when the PHP backend is unavailable) ──────
 const DEMO_CATEGORIES = [
