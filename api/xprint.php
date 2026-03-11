@@ -1,15 +1,14 @@
 <?php
 /**
- * xprint.php — Network receipt printing endpoint for ESC/POS printers
+ * Network receipt printer backend.
+ * Sends raw ESC/POS data to an Xprinter (or compatible) via TCP socket.
  * 
- * Configure your printer IP and port below.
- * 
- * Usage:
- *   GET  ?test=1              — test printer connectivity
- *   POST { action: 'print', receipt: '...' } — send receipt to printer
+ * Configure PRINTER_IP and PRINTER_PORT below.
+ * Default Xprinter port is 9100.
  */
 
-header('Content-Type: application/json');
+// ── CORS Headers ──
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -20,63 +19,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// ── Configuration ──────────────────────────────────────────────
-// Change these to match your Xprinter network settings
-$PRINTER_IP   = '192.168.1.100';  // Your printer's IP address
-$PRINTER_PORT = 9100;              // Default ESC/POS port
-$TIMEOUT      = 3;                 // Connection timeout in seconds
+// ── Configuration ──
+define('PRINTER_IP',   '192.168.1.100');  // Change to your printer's IP address
+define('PRINTER_PORT', 9100);             // Default ESC/POS raw print port
+define('TIMEOUT_SEC',  3);
 
-// ── Test Connection ────────────────────────────────────────────
+// ── Test connection ──
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['test'])) {
-    $socket = @fsockopen($PRINTER_IP, $PRINTER_PORT, $errno, $errstr, $TIMEOUT);
-    
-    if ($socket) {
-        fclose($socket);
-        echo json_encode(['success' => true, 'message' => 'Printer is reachable']);
+    $sock = @fsockopen(PRINTER_IP, PRINTER_PORT, $errno, $errstr, TIMEOUT_SEC);
+    if ($sock) {
+        fclose($sock);
+        echo json_encode(['success' => true, 'message' => 'Printer bereikbaar op ' . PRINTER_IP . ':' . PRINTER_PORT]);
     } else {
         http_response_code(503);
-        echo json_encode(['success' => false, 'error' => "Cannot connect: $errstr ($errno)"]);
+        echo json_encode(['success' => false, 'error' => "Kan printer niet bereiken ($errno): $errstr"]);
     }
     exit;
 }
 
-// ── Print Receipt ──────────────────────────────────────────────
+// ── Print receipt ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    
-    if (!$input || !isset($input['action']) || $input['action'] !== 'print') {
+
+    if (empty($input['receipt'])) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Invalid request. Expected { action: "print", receipt: "..." }']);
+        echo json_encode(['success' => false, 'error' => 'Geen bondata ontvangen']);
         exit;
     }
-    
-    if (!isset($input['receipt']) || empty($input['receipt'])) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Receipt data is empty']);
-        exit;
-    }
-    
+
     $receipt = $input['receipt'];
-    $socket = @fsockopen($PRINTER_IP, $PRINTER_PORT, $errno, $errstr, $TIMEOUT);
-    
-    if (!$socket) {
+
+    $sock = @fsockopen(PRINTER_IP, PRINTER_PORT, $errno, $errstr, TIMEOUT_SEC);
+    if (!$sock) {
         http_response_code(503);
-        echo json_encode(['success' => false, 'error' => "Cannot connect to printer: $errstr ($errno)"]);
+        echo json_encode(['success' => false, 'error' => "Printer niet bereikbaar ($errno): $errstr"]);
         exit;
     }
-    
-    $written = fwrite($socket, $receipt);
-    fclose($socket);
-    
-    if ($written === false) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Failed to write to printer']);
+
+    $written = @fwrite($sock, $receipt);
+    fclose($sock);
+
+    if ($written === false || $written === 0) {
+        echo json_encode(['success' => false, 'error' => 'Kon niet naar printer schrijven']);
     } else {
-        echo json_encode(['success' => true, 'message' => 'Receipt printed successfully', 'bytes' => $written]);
+        echo json_encode(['success' => true, 'message' => 'Bon verstuurd (' . $written . ' bytes)', 'bytes' => $written]);
     }
     exit;
 }
 
-// ── Fallback ───────────────────────────────────────────────────
+// ── Unknown request ──
 http_response_code(405);
-echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+echo json_encode(['success' => false, 'error' => 'Methode niet toegestaan']);
+
