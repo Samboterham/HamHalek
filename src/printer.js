@@ -195,7 +195,7 @@ async function printUSB(receiptData) {
 
 async function printNetwork(receiptData) {
     try {
-        const response = await fetch('/api/xprint.php', {
+        const response = await fetch('api/xprint.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'print', receipt: receiptData }),

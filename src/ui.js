@@ -258,6 +258,7 @@ function renderAttractScreen() {
   function showSlide(index) {
     if (featured.length === 0) return;
 
+    const product = featured[index];
     const imageUrl = `images/${product.image_filename}`;
 
     const nameEl = div.querySelector('#attract-product-name');
@@ -673,6 +674,11 @@ function renderPaymentScreen() {
 
     state.orderNumber = pickupNumber;
 
+    // Trigger print immediately after payment confirmation
+    const itemsTotal = getCartTotal().toFixed(2);
+    const tipAmount = state.tip || 0;
+    printReceipt(state.cart, state.orderNumber, state.orderType, tipAmount, parseFloat(itemsTotal));
+
     terminal.style.transform = 'scale(1)';
     terminal.innerHTML = `<span style="font-size: 4rem; color: var(--color-success);">✓</span>`;
     terminal.style.borderColor = 'var(--color-success)';
@@ -695,9 +701,6 @@ function renderSuccessScreen() {
   const msg = state.paymentMethod === 'counter' ? t('proceed_counter') : t('please_receipt');
   const itemsTotal = getCartTotal().toFixed(2);
   const tipAmount = state.tip || 0;
-
-  // Auto-print receipt on arrival
-  printReceipt(state.cart, state.orderNumber, state.orderType, tipAmount, parseFloat(itemsTotal));
 
   div.innerHTML = `
         <div class="success-card animate-up">
@@ -722,15 +725,8 @@ function renderSuccessScreen() {
             <button id="new-order-btn" class="btn btn-primary animate-up" style="animation-delay: 0.2s; padding: 24px; font-size: 1.5rem; box-shadow: 0 10px 20px rgba(255,117,32,0.2);">
                 ${t('finish')}
             </button>
-            <button id="reprint-btn" class="btn btn-secondary animate-up" style="animation-delay: 0.3s; padding: 15px; font-size: 1rem; opacity: 0.8;">
-                🖨️ ${t('print_receipt') || 'Print Receipt'}
-            </button>
         </div>
     `;
-
-  div.querySelector('#reprint-btn').addEventListener('click', () => {
-    printReceipt(state.cart, state.orderNumber, state.orderType, tipAmount, parseFloat(itemsTotal));
-  });
 
   div.querySelector('#new-order-btn').addEventListener('click', () => {
     resetSession();
